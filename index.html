@@ -1,0 +1,709 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Connector Atlas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+img{max-width:100%}
+/* Layout: one instrument panel — search rail on top, results list left, connector sheet right (stacks on phones). */
+:root{
+  color-scheme:dark;
+  --bg:#0d1115; --panel:#141a20; --panel2:#1a222a; --line:#26313b; --line2:#33414d;
+  --fg:#e4e9ee; --muted:#8d9aa6; --dim:#62707c;
+  --accent:#e9a23b; --accent-ink:#1a1206; --accent-soft:rgba(233,162,59,.14);
+  --ok:#5fbf8a; --ok-soft:rgba(95,191,138,.14); --warn:#e0b44c; --warn-soft:rgba(224,180,76,.14); --bad:#e0716b; --bad-soft:rgba(224,113,107,.14);
+  --paper:#ffffff;
+  --f-display:"Chakra Petch","Segoe UI",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--bg);color:var(--fg)}
+body{font-family:var(--f-body);font-size:14px;line-height:1.45;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 40px}
+.wrap{max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:14px}
+.brand{display:flex;flex-direction:column;gap:2px}
+.brand h1{font-family:var(--f-display);font-weight:700;font-size:28px;letter-spacing:.02em;margin:0;line-height:1.05}
+.brand h1 span{color:var(--accent)}
+.brand p{margin:0;color:var(--muted);font-size:13px}
+.fams{display:flex;gap:6px;flex-wrap:wrap}
+.fam{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line2);border-radius:3px;padding:3px 8px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tab{white-space:nowrap}
+.tab{font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:.03em;background:none;border:0;color:var(--muted);padding:10px 16px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
+.tab:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.searchbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.searchbar input{flex:1 1 280px;min-width:0;font-family:var(--f-mono);font-size:17px;background:var(--panel);color:var(--fg);border:1px solid var(--line2);border-radius:4px;padding:11px 14px;text-transform:uppercase}
+.searchbar input::placeholder{text-transform:none;color:var(--dim)}
+.btn{font-family:var(--f-body);font-weight:600;font-size:14px;border-radius:4px;padding:10px 16px;cursor:pointer;border:1px solid var(--line2);background:var(--panel2);color:var(--fg)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.small{padding:6px 10px;font-size:12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.chips .lbl{color:var(--dim);font-size:12px;margin-right:4px}
+.chip{font-family:var(--f-mono);font-size:12px;background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:3px;padding:3px 8px;cursor:pointer}
+.chip:hover{color:var(--fg);border-color:var(--line2)}
+.need{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px}
+.q{display:flex;flex-direction:column;gap:6px;min-width:0}
+.q label,.q .ql{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.q input,.q select{font-family:var(--f-mono);font-size:14px;background:var(--bg);color:var(--fg);border:1px solid var(--line2);border-radius:4px;padding:9px 10px;width:100%}
+.q .hint{font-size:12px;color:var(--dim)}
+.seg{display:flex;border:1px solid var(--line2);border-radius:4px;overflow:hidden}
+.seg button{flex:1;background:var(--bg);color:var(--muted);border:0;border-right:1px solid var(--line2);padding:9px 6px;font-size:13px;cursor:pointer;font-family:var(--f-body)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.q.wide{grid-column:1/-1}
+.needfoot{grid-column:1/-1;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.parsed{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.main{display:grid;grid-template-columns:minmax(260px,340px) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:860px){.main{grid-template-columns:1fr}}
+.results{display:flex;flex-direction:column;gap:8px;min-width:0}
+.rhead{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;display:flex;justify-content:space-between;gap:8px}
+.ritem{display:flex;flex-direction:column;gap:4px;text-align:left;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--line2);border-radius:4px;padding:9px 11px;cursor:pointer;color:var(--fg);font-family:var(--f-body);width:100%}
+.ritem:hover{border-color:var(--line2)}
+.ritem[aria-current="true"]{background:var(--panel2);border-color:var(--line2);border-left-color:var(--accent)}
+.ritem.exact{border-left-color:var(--ok)}
+.ritem.closest{border-left-color:var(--warn)}
+.ritem .pn{font-family:var(--f-mono);font-weight:600;font-size:14px;overflow-wrap:anywhere}
+.ritem .d{font-size:12px;color:var(--muted)}
+.tags{display:flex;flex-wrap:wrap;gap:4px}
+.tag{font-size:11px;border-radius:3px;padding:1px 6px;background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
+.tag.ok{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+.tag.warn{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.tag.bad{background:var(--bad-soft);color:var(--bad);border-color:transparent}
+.empty{color:var(--muted);background:var(--panel);border:1px dashed var(--line2);border-radius:6px;padding:16px;font-size:13px}
+.sheet{background:var(--panel);border:1px solid var(--line);border-radius:6px;display:flex;flex-direction:column;min-width:0}
+.shead{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+.shead .mpn{font-family:var(--f-mono);font-weight:600;font-size:24px;letter-spacing:.01em;overflow-wrap:anywhere;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.shead .desc{color:var(--muted);font-size:14px;max-width:75ch}
+.match{font-size:13px;border-radius:4px;padding:8px 10px}
+.match.ok{background:var(--ok-soft);color:var(--ok)}
+.match.warn{background:var(--warn-soft);color:var(--warn)}
+.pics{display:grid;grid-template-columns:3fr 2fr;gap:14px;padding:16px 18px;border-bottom:1px solid var(--line)}
+@media (max-width:560px){.pics{grid-template-columns:1fr}}
+.pic{display:flex;flex-direction:column;gap:6px;min-width:0}
+.pic .frame{background:var(--paper);border-radius:4px;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;padding:14px;max-width:100%}
+.pic .frame img{max-height:100%;max-width:100%;object-fit:contain}
+.pic .cap{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.pic .cap b{color:var(--fg);font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-size:11px}
+.specs{padding:6px 18px 10px;display:grid;grid-template-columns:1fr 1fr;column-gap:28px}
+@media (max-width:700px){.specs{grid-template-columns:1fr}}
+.row{display:grid;grid-template-columns:150px minmax(0,1fr);gap:10px;padding:9px 0;border-bottom:1px solid var(--line);align-items:baseline}
+.row .k{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--dim);font-weight:600}
+.row .v{font-size:14px;overflow-wrap:anywhere}
+.mono{font-family:var(--f-mono)}
+.v a.pnlink{color:var(--accent);text-decoration:none;border-bottom:1px dotted var(--accent);cursor:pointer;font-family:var(--f-mono)}
+.sw{display:inline-block;width:12px;height:12px;border-radius:2px;vertical-align:-1px;margin-right:6px;border:1px solid var(--line2)}
+.yes{color:var(--ok)} .no{color:var(--bad)} .na{color:var(--muted)}
+.links{display:flex;flex-wrap:wrap;gap:8px;padding:14px 18px;border-top:1px solid var(--line)}
+.links a{font-size:13px;color:var(--fg);text-decoration:none;border:1px solid var(--line2);border-radius:4px;padding:7px 12px;background:var(--panel2)}
+.links a:hover{border-color:var(--accent);color:var(--accent)}
+.notes{padding:4px 18px 16px;display:flex;flex-direction:column;gap:6px}
+.notes h3{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:10px 0 2px}
+.notes li{font-size:13px;color:var(--muted);margin-left:2px}
+.notes ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+.fitbox{font-family:var(--f-mono);font-size:12.5px;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:8px 10px;color:var(--fg)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--panel2);border:1px solid var(--line2);color:var(--fg);padding:9px 14px;border-radius:4px;font-size:13px;z-index:20}
+
+.wiz{display:flex;flex-direction:column;gap:18px;max-width:880px;width:100%;margin:0 auto}
+.wtop{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12px;color:var(--muted)}
+.wtop b{color:var(--accent);font-family:var(--f-mono)}
+.bar{height:6px;border-radius:3px;background:var(--panel2);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:3px}
+@media (prefers-reduced-motion:no-preference){.bar i{transition:width .25s ease}}
+.answers{display:flex;flex-wrap:wrap;gap:6px}
+.ans{font-size:12px;background:var(--panel);border:1px solid var(--line2);color:var(--fg);border-radius:3px;padding:3px 9px;cursor:pointer;font-family:var(--f-body)}
+.ans span{color:var(--dim);margin-right:4px}
+.ans:hover{border-color:var(--accent)}
+.qhead{display:flex;flex-direction:column;gap:4px}
+.qhead .qn{font-family:var(--f-display);font-weight:700;font-size:24px;letter-spacing:.02em}
+.qhead .qp{color:var(--muted);font-size:15px}
+.back{background:none;border:0;color:var(--muted);font-size:13px;cursor:pointer;padding:0;align-self:flex-start;font-family:var(--f-body)}
+.back:hover{color:var(--fg)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+.cards.small{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
+.card{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px;cursor:pointer;color:var(--fg);font-family:var(--f-body);min-height:96px}
+.card:hover{border-color:var(--accent);background:var(--panel2)}
+.card[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.card .ct{font-family:var(--f-display);font-weight:600;font-size:17px;letter-spacing:.02em}
+.card .cs{font-size:12.5px;color:var(--muted)}
+.card .cm{font-family:var(--f-mono);font-size:11px;color:var(--accent);letter-spacing:.04em}
+.card .glyph{width:34px;height:34px;color:var(--accent)}
+.card .swatch{width:28px;height:28px;border-radius:4px;border:1px solid var(--line2)}
+.wires{display:flex;flex-direction:column;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px}
+.wrow{display:grid;grid-template-columns:110px 20px 150px 36px;gap:8px;align-items:center}
+.wrow input,.wrow select{font-family:var(--f-mono);font-size:15px;background:var(--bg);color:var(--fg);border:1px solid var(--line2);border-radius:4px;padding:9px 10px;width:100%}
+.wrow .x{color:var(--dim);text-align:center}
+.wrow .del{background:none;border:1px solid var(--line2);color:var(--muted);border-radius:4px;height:38px;cursor:pointer}
+.wfoot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:4px}
+.wsum{font-family:var(--f-mono);font-size:13px;color:var(--muted)}
+.rbar{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.rbar h2{font-family:var(--f-display);font-size:22px;margin:0;letter-spacing:.02em}
+.rbar .sub{color:var(--muted);font-size:13px}
+.qwires{display:flex;flex-direction:column;gap:8px}
+.qwires .wrow{grid-template-columns:150px 20px 110px 36px}
+@media (max-width:420px){.wrow,.qwires .wrow{grid-template-columns:1fr 14px 1fr 36px}}
+.live{padding:14px 18px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.live h3{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.live h3 span{text-transform:none;letter-spacing:0;color:var(--dim);font-weight:400}
+.dist{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
+.dcard{background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.dcard .dh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.dcard .dn{font-family:var(--f-display);font-weight:600;font-size:15px}
+.stock{font-family:var(--f-mono);font-size:13px}
+.stock.ok{color:var(--ok)} .stock.no{color:var(--bad)}
+.pb{width:100%;border-collapse:collapse;font-family:var(--f-mono);font-size:12.5px;font-variant-numeric:tabular-nums}
+.pb td{padding:3px 0;border-bottom:1px solid var(--line)} .pb td:last-child{text-align:right}
+.dmeta{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:2px}
+.dlinks{display:flex;gap:10px;flex-wrap:wrap;font-size:12.5px}
+.dlinks a{color:var(--accent)}
+.dphoto{width:64px;height:64px;object-fit:contain;background:#fff;border-radius:4px;float:right}
+details.params summary{cursor:pointer;font-size:12px;color:var(--muted)}
+details.params table{font-size:12px;width:100%;border-collapse:collapse;margin-top:6px}
+details.params td{padding:2px 6px 2px 0;vertical-align:top;border-bottom:1px solid var(--line)}
+details.params td:first-child{color:var(--dim);width:45%}
+footer{color:var(--dim);font-size:12px;border-top:1px solid var(--line);padding-top:12px;max-width:110ch}
+@media (prefers-reduced-motion:no-preference){.ritem,.chip,.links a{transition:border-color .12s,color .12s}}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>CONNECTOR <span>ATLAS</span></h1>
+      <p>Find a connector by part number or by what the harness needs. Pictures are Visio-ready.</p>
+    </div>
+    <div class="fams" id="fams" aria-label="Families in this library"></div>
+  </header>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tab-pn" aria-selected="true" aria-controls="pane-pn">Search by part number</button>
+    <button class="tab" role="tab" id="tab-need" aria-selected="false" aria-controls="pane-need">Search by need – step by step</button>
+    <button class="tab" role="tab" id="tab-quick" aria-selected="false" aria-controls="pane-quick">Search by need – one page</button>
+  </div>
+
+  <section id="pane-pn" role="tabpanel" aria-labelledby="tab-pn" style="display:flex;flex-direction:column;gap:10px">
+    <form class="searchbar" id="pnform" autocomplete="off">
+      <input id="pnq" type="search" placeholder="e.g. D38999/26WC35PN, M24308/4-3F, M39012/26-0010, 165X02629X" aria-label="Part number">
+      <button class="btn primary" type="submit">Look up</button>
+    </form>
+    <div class="chips" id="quick"></div>
+  </section>
+
+  <section id="pane-need" role="tabpanel" aria-labelledby="tab-need" hidden>
+    <div class="wiz" id="wiz"></div>
+  </section>
+
+  <section id="pane-quick" role="tabpanel" aria-labelledby="tab-quick" hidden>
+    <form class="need" id="quick-form" autocomplete="off"></form>
+  </section>
+
+  <div class="main" id="main">
+    <div class="results" id="results" aria-live="polite"></div>
+    <article class="sheet" id="sheet"></article>
+  </div>
+
+  <footer>
+    Connector data comes from catalog.js and pictures from the img folder next to this page. Front views are cut from the Amphenol D-sub and MIL-DTL-38999 catalogs (pin insert front; socket faces mirrored with readable designators). Side views: engineer's D-sub pictures, the W114 D38999 plug master, the Amphenol 38999 catalog receptacle drawings, and the supplied BNC drawing. Fields marked “verify” come from rules or catalogs that were not confirmed against a live distributor page. Distributor links open a search on that site.
+  </footer>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+
+<!-- Data files kept next to this page. Claude edits catalog.js; the weekly refresh writes live_data.js. -->
+<script src="catalog.js"></script>
+<script src="live_data.js"></script>
+<script>
+/* Connector Atlas – page logic. All connector data comes from catalog.js (window.CATALOG);
+   distributor data from live_data.js (window.LIVE); pictures from img/ (or window.IMG_INLINE in the single-file build). */
+const CAT = window.CATALOG || {families:[],parts:[],accessories:[],d38999:null,examples:[],coaxCables:[]};
+const LIVE = window.LIVE || {};
+const LIVE_AS_OF = window.LIVE_AS_OF || '';
+const IMG_INLINE = window.IMG_INLINE || null;
+const imgSrc = f => (IMG_INLINE && IMG_INLINE[f]) || ('img/' + f);
+
+/* ===================== HELPERS ===================== */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const norm = s => String(s || '').toUpperCase().replace(/\s+/g, '');
+const dk = pn => 'https://www.digikey.com/en/products/result?keywords=' + encodeURIComponent(pn);
+const ms = pn => 'https://www.mouser.com/c/?q=' + encodeURIComponent(pn);
+const plink = pn => `<a class="pnlink" data-pn="${esc(pn)}">${esc(pn)}</a>`;
+const FAM = Object.fromEntries(CAT.families.map(f => [f.id, f]));
+const famName = f => f === 'acc' ? 'Accessory' : (FAM[f] ? FAM[f].name : f);
+const AWGS = [8,10,12,14,16,18,20,22,24,26,28];
+
+/* ===================== D38999 GENERATOR (rules; data from CAT.d38999) ===================== */
+const D = CAT.d38999;
+const SHELL_LETTER = D ? D.shellLetters : {};
+const LETTER_SHELL = Object.fromEntries(Object.entries(SHELL_LETTER).map(([k, v]) => [v, +k]));
+const sizeAwg = (fam, s) => (FAM[fam] && FAM[fam].sizes && FAM[fam].sizes[s]) ? FAM[fam].sizes[s].awg : null;
+const sizeLbl = (fam, s) => (FAM[fam] && FAM[fam].sizes && FAM[fam].sizes[s] && FAM[fam].sizes[s].label) || ('#' + s);
+
+function d38Row(style, fin, shellL, insNo, cont, key, lc) {
+  const shell = LETTER_SHELL[shellL]; const id = shell + '-' + insNo;
+  const F = D.finishes[fin]; const S = D.styles[style];
+  const milPn = `D38999/${style}${fin}${shellL}${insNo}${cont}${key}`;
+  const pn = lc && F && S ? `${S.commercial}${F.commercial}-${id}${cont}${key !== 'N' ? key : ''}-LC` : milPn;
+  const known = D.inserts[id]; const pin = cont === 'P' || cont === 'A';
+  const sizes = known ? Object.entries(known) : [];
+  const count = sizes.reduce((a, [, n]) => a + n, 0);
+  const layout = known ? sizes.map(([s, n]) => `${n} × ${sizeLbl('d38999', s)}`).join(' + ') : 'not in library';
+  const mc = pin ? 'S' : 'P';
+  const mates = style === '26' ? [`D38999/20${fin}${shellL}${insNo}${mc}${key}`, `D38999/24${fin}${shellL}${insNo}${mc}${key}`] : [`D38999/26${fin}${shellL}${insNo}${mc}${key}`];
+  const bsl = F ? F.backshell : 'W';
+  const notes = [];
+  if (lc) notes.push(`Amphenol TV commercial equivalent of ${milPn}, ordered less contacts (-LC). MIL D38999 numbers always come with contacts.`);
+  if (!known) notes.push(`Insert ${id} is not in this library: no front view and no contact data. Check the Amphenol 38999 catalog.`);
+  if (key !== 'N') notes.push(`Key position ${key} (alternate). Mating part must use the same key.`);
+  if (!F) notes.push(`Finish ${fin} is valid MIL-DTL-38999 but not described in this library.`);
+  notes.push('Unused cavities on an environmental connector take sealing plugs (MS27488-22-2 for #22D, -20 for #20, -16 for #16, -12 for #12).');
+  const verify = ['Backshell finish letter follows the connector finish (W→W, F→N, Z→Z).'];
+  if (lc) verify.unshift('Commercial -LC part number format (catalog p.45-46).');
+  return {
+    pn, family: 'd38999', short: `${S ? S.short : 'Connector'}${lc ? ' · less contacts' : ''} · shell ${shell} (${shellL}) · ${id} · ${count || '?'} contacts`,
+    desc: `${lc ? 'Amphenol TV (MIL-DTL-38999 Series III equivalent) ' : 'MIL-DTL-38999 Series III '}${S ? S.name : 'connector'}, shell ${shell} (${shellL}), insert ${id}: ${layout}, ${pin ? 'pin' : 'socket'} contacts, ${F ? F.name.toLowerCase() : 'finish ' + fin}${key !== 'N' ? ', key ' + key : ''}`,
+    backshell: [`M85049/38S${shell}${bsl}`, `M85049/39S${shell}${bsl} (90°)`], mates,
+    color: F ? {name: F.name + ' (' + fin + ')', sw: F.sw} : {name: 'Finish ' + fin},
+    side: S ? S.side : null, sideCap: S ? S.sideCap : '',
+    front: known ? `d38999_${id}_${pin ? 'pin' : 'socket'}.png` : null, frontCap: `Insert ${id}, ${pin ? 'pin' : 'socket'} face`,
+    shell: `${shell} (${shellL})`,
+    pins: sizes.map(([s]) => ({pn: D.contacts[s] ? D.contacts[s][pin ? 0 : 1] : 'Size ' + s, note: `${sizeLbl('d38999', s)} ${pin ? 'pin' : 'socket'}${sizeAwg('d38999', s) ? `, ${sizeAwg('d38999', s)[0]}–${sizeAwg('d38999', s)[1]} AWG` : ''}`})),
+    withPins: lc ? {v: false, t: 'No – less contacts (-LC); order the contacts below separately'} : {v: true, t: 'Yes – MIL crimp connectors are supplied with contacts'},
+    angle: 'Straight connector; 90° cable exit with the M85049/39 backshell', pcb: false, mountText: S ? S.mountText : '?',
+    links: [['38999 catalog (PDF)', D.catalogUrl]], notes, verify,
+    alt: style === '20' ? `D38999/24${fin}${shellL}${insNo}${cont}${key}` : null,
+    search: {mount: [S ? S.mount : '?'], gender: pin ? 'male' : 'female', angles: style === '26' ? ['straight', '90'] : ['straight'],
+             withPins: !lc, contacts: known || {}, angleNote90: style === '26' ? `90° cable exit with backshell M85049/39S${shell}${bsl}` : null}
+  };
+}
+function d38PcbRow(fin, id, pin) {
+  const F = D.finishes[fin]; const [sh, ins] = id.split('-'); const shell = +sh; const L = SHELL_LETTER[shell];
+  const pn = `${D.pcb.prefix}${F.commercial}-${id}${pin ? 'P' : 'S'}-PCB`;
+  const sizes = Object.entries(D.inserts[id]); const count = sizes.reduce((a, [, n]) => a + n, 0);
+  return {
+    pn, family: 'd38999', short: `PCB receptacle · shell ${shell} (${L}) · ${id} · ${count} contacts`,
+    desc: `MIL-DTL-38999 Series III (Amphenol TV, commercial) PCB wall-mount receptacle, shell ${shell}, insert ${id}: ${sizes.map(([s, n]) => `${n} × ${sizeLbl('d38999', s)}`).join(' + ')}, ${pin ? 'pin' : 'socket'} PCB contacts, ${F.name.toLowerCase()}`,
+    backshell: ['None – board-mounted'], mates: [`D38999/26${fin}${L}${ins}${pin ? 'S' : 'P'}N`],
+    color: {name: F.name + ' (' + F.commercial + ')', sw: F.sw}, side: D.pcb.side, sideCap: D.pcb.sideCap,
+    front: `d38999_${id}_${pin ? 'pin' : 'socket'}.png`, frontCap: `Insert ${id}, ${pin ? 'pin' : 'socket'} face`, shell: `${shell} (${L})`,
+    pins: [{pn: 'PCB contacts, set by the termination code', note: 'Straight PC tails; length and tinning chosen in the part number'}],
+    withPins: {v: true, t: 'Yes – PCB contacts are part of the receptacle'}, angle: 'Straight (90° PCB versions: consult Amphenol)', pcb: true, mountText: 'PCB',
+    links: [['38999 catalog (PDF)', D.catalogUrl]],
+    notes: ['Commercial Amphenol TV series – not a MIL QPL part number.', '“-PCB” stands in for the PCB termination suffix (catalog “How to Order”, steps 7.1–7.4: termination, tail length, accessory, tinning) before ordering.'],
+    verify: ['Full PCB part number including the termination code.', 'PCB pattern availability for this insert (catalog shows the most common PCB inserts only).'],
+    search: {mount: ['pcb'], gender: pin ? 'male' : 'female', angles: ['straight'], withPins: true, contacts: D.inserts[id]}
+  };
+}
+function d38Rows(fin) {          // every library D38999 part for one finish
+  const out = [];
+  if (!D) return out;
+  for (const id of Object.keys(D.inserts)) {
+    const [sh, ins] = id.split('-'); const L = SHELL_LETTER[sh]; if (!L) continue;
+    for (const st of Object.keys(D.styles)) for (const c of ['P', 'S']) { out.push(d38Row(st, fin, L, ins, c, 'N', false)); out.push(d38Row(st, fin, L, ins, c, 'N', true)); }
+    if (D.finishes[fin] && D.finishes[fin].commercial) for (const p of [true, false]) out.push(d38PcbRow(fin, id, p));
+  }
+  return out;
+}
+function d38Lookup(P) {
+  if (!D) return null;
+  let m = P.match(/^D38999[\/_\-]?(\d\d)([A-Z])([A-J])0*(\d{1,3})([PSAB])([NA-E])?$/);
+  if (m && D.styles[m[1]]) return d38Row(m[1], m[2], m[3], m[4], m[5], m[6] || 'N', false);
+  const comToStyle = Object.fromEntries(Object.entries(D.styles).map(([k, s]) => [s.commercial, k]));
+  const comToFin = Object.fromEntries(Object.entries(D.finishes).map(([k, f]) => [f.commercial, k]));
+  m = P.match(/^([A-Z]+\d\d)([A-Z]{2})-(\d{1,2})-(\d{1,3})([PSAB])([A-E])?-LC$/);
+  if (m && comToStyle[m[1]] && comToFin[m[2]] && SHELL_LETTER[m[3]]) return d38Row(comToStyle[m[1]], comToFin[m[2]], SHELL_LETTER[m[3]], m[4], m[5], m[6] || 'N', true);
+  m = P.match(/^([A-Z]+\d\d)([A-Z]{2})-(\d{1,2}-\d{1,3})([PS])(-PCB)?$/);
+  if (m && m[1] === D.pcb.prefix && comToFin[m[2]] && D.inserts[m[3]]) return d38PcbRow(comToFin[m[2]], m[3], m[4] === 'P');
+  return null;
+}
+
+/* ===================== INDEX ===================== */
+const BY_PN = new Map();
+for (const r of CAT.parts) BY_PN.set(norm(r.pn), r);
+for (const a of CAT.accessories) if (!BY_PN.has(norm(a.pn))) BY_PN.set(norm(a.pn), a);
+const ALIAS = new Map((CAT.aliases || []).map(a => [norm(a.pn), a]));
+const INDEX = [...CAT.parts.map(r => r.pn), ...CAT.accessories.map(a => a.pn), ...(CAT.index || []), ...(CAT.aliases || []).map(a => a.pn)];
+if (D) for (const id of Object.keys(D.inserts)) {
+  const [sh, ins] = id.split('-'); const L = SHELL_LETTER[sh];
+  for (const st of Object.keys(D.styles)) for (const f of Object.keys(D.finishes)) for (const c of ['P', 'S']) INDEX.push(`D38999/${st}${f}${L}${ins}${c}N`);
+  for (const f of Object.keys(D.finishes)) for (const c of ['P', 'S']) {
+    INDEX.push(`${D.pcb.prefix}${D.finishes[f].commercial}-${id}${c}-PCB`);
+    for (const st of Object.keys(D.styles)) INDEX.push(`${D.styles[st].commercial}${D.finishes[f].commercial}-${id}${c}-LC`);
+  }
+}
+const loose = s => norm(s).replace(/[\/_\-.]/g, '');
+let LOOSE = null;
+function lookupCore(P) { return BY_PN.get(P) || d38Lookup(P); }
+function lookup(q) {
+  const P = norm(q); if (!P) return null;
+  const al = ALIAS.get(P);
+  if (al) { const t = lookupCore(norm(al.to)); if (t) return {...t, aliasFrom: al.pn, notes: [al.note || ('Same part as ' + t.pn), ...(t.notes || [])]}; }
+  const hit = lookupCore(P); if (hit) return hit;
+  if (!LOOSE) { LOOSE = new Map(); for (const x of INDEX) if (!LOOSE.has(loose(x))) LOOSE.set(loose(x), x); }
+  const lp = LOOSE.get(loose(P)); if (lp && norm(lp) !== P) return lookup(lp);
+  return null;
+}
+function suggest(q) { const P = norm(q); if (!P) return []; const a = INDEX.filter(x => norm(x).startsWith(P)); const b = INDEX.filter(x => !norm(x).startsWith(P) && norm(x).includes(P)); const lp = loose(P); const c = lp.length >= 4 ? INDEX.filter(x => loose(x).includes(lp)) : []; return [...new Set([...a, ...b, ...c])].slice(0, 40); }
+function fullLinks(r) { return [['DigiKey', dk(r.pn)], ['Mouser', ms(r.pn)], ...(r.links || [])]; }
+
+/* ===================== NEED SEARCH (generic, every family) ===================== */
+function famRows(fam, a) { const extra = CAT.parts.filter(r => r.family === fam); return FAM[fam] && FAM[fam].generator === 'd38999' ? [...d38Rows(a.finish || Object.keys(D.finishes)[0]), ...extra] : extra; }
+function fitContacts(fam, contacts, wires) {
+  const cap = {...contacts}; const use = {}; const un = [];
+  const opts = w => Object.keys(cap).filter(s => { const r = sizeAwg(fam, s); return r && w.awg >= r[0] && w.awg <= r[1]; }).sort((x, y) => sizeAwg(fam, y)[0] - sizeAwg(fam, x)[0]);
+  for (const w of [...wires].sort((x, y) => opts(x).length - opts(y).length)) {
+    let left = w.n;
+    for (const s of opts(w)) { const k = Math.min(left, cap[s]); if (k > 0) { cap[s] -= k; left -= k; (use[s] = use[s] || []).push({awg: w.awg, n: k}); } if (!left) break; }
+    if (left) un.push({awg: w.awg, n: left});
+  }
+  return {use, un, spare: Object.values(cap).reduce((x, y) => x + y, 0), unN: un.reduce((x, y) => x + y.n, 0)};
+}
+const mountLabel = (fam, m) => { const o = FAM[fam] && FAM[fam].mounts.find(x => x[0] === m); return o ? o[1].toLowerCase() : m; };
+function needSearch(o) {
+  const fam = o.fam; const F = FAM[fam]; if (!F) return {list: [], total: 0};
+  const wires = o.wires || []; const total = wires.reduce((x, y) => x + y.n, 0);
+  const asked = new Set(wSteps(o));
+  const cands = [];
+  for (const r of famRows(fam, o)) {
+    const s = r.search || {}; const diffs = [];
+    if (o.gender && s.gender !== o.gender) { const g = F.genders.find(x => x[0] === s.gender); diffs.push(`${g ? g[1].toLowerCase() : s.gender}, not ${F.genders.find(x => x[0] === o.gender)[1].toLowerCase()}`); }
+    if (o.mount && !(s.mount || []).includes(o.mount)) diffs.push(`${(s.mount || []).map(m => mountLabel(fam, m)).join(' / ')}, not ${mountLabel(fam, o.mount)}`);
+    const ang = o.angle || 'straight';
+    if (!(s.angles || ['straight']).includes(ang)) diffs.push(ang === '90' ? 'straight, not 90°' : 'right angle, not straight');
+    if (asked.has('pins') && o.pins) { const want = o.pins === 'with'; if (s.withPins !== want) diffs.push(want ? 'sold without contacts' : 'comes with contacts'); }
+    if (asked.has('coax') && o.coax && o.coax !== 'none') {
+      if (s.noCable) { if (o.mount === 'cable') diffs.push('no cable entry'); }
+      else if (!(s.cables || []).length) diffs.push('cable range not recorded');
+      else if (!(s.cables || []).includes(o.coax)) diffs.push(`for ${(s.cables || []).slice(0, 2).join('/')}, not ${o.coax}`);
+    }
+    if (F.coax && s.impedance) { const cc = (CAT.coaxCables || []).find(c => c[0] === o.coax); const want = cc && cc[2] ? cc[2] : 50; if (s.impedance !== want) diffs.push(`${s.impedance} Ω, not ${want} Ω`); }
+    const fit = (F.sizes && s.contacts && Object.keys(s.contacts).length) ? fitContacts(fam, s.contacts, wires) : null;
+    const size = Object.values(s.contacts || {}).reduce((x, y) => x + y, 0);
+    let p = 0; if (fit) { p += fit.unN * 100; p += Math.min(fit.spare, 200) * 0.4; } p += diffs.length * 60; p += size * 0.01 + (s.withPins ? 0 : 0.005);
+    const c = {rec: r, fit, diffs, total, exact: diffs.length === 0 && (!fit || fit.unN === 0), score: p};
+    if (s.angleNote90 && ang === '90') c.angleNote = s.angleNote90;
+    cands.push(c);
+  }
+  cands.sort((x, y) => (y.exact - x.exact) || (x.score - y.score));
+  return {wires, total, list: cands};
+}
+
+/* ===================== QUESTIONS (driven by the catalog) ===================== */
+const ICON = {
+ circ:'<svg class="glyph" viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="2"><circle cx="17" cy="17" r="13"/><circle cx="12" cy="13" r="1.6" fill="currentColor"/><circle cx="22" cy="13" r="1.6" fill="currentColor"/><circle cx="17" cy="21" r="1.6" fill="currentColor"/><path d="M15 4h4"/></svg>',
+ dsub:'<svg class="glyph" viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 10h26l-3 14H7z"/><circle cx="10" cy="15" r="1.3" fill="currentColor"/><circle cx="15" cy="15" r="1.3" fill="currentColor"/><circle cx="20" cy="15" r="1.3" fill="currentColor"/><circle cx="25" cy="15" r="1.3" fill="currentColor"/><circle cx="12.5" cy="20" r="1.3" fill="currentColor"/><circle cx="17.5" cy="20" r="1.3" fill="currentColor"/><circle cx="22.5" cy="20" r="1.3" fill="currentColor"/></svg>',
+ coax:'<svg class="glyph" viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="2"><circle cx="17" cy="17" r="12"/><circle cx="17" cy="17" r="3.5"/><path d="M3 17h2M29 17h2"/></svg>',
+ rect:'<svg class="glyph" viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="9" width="24" height="16" rx="2"/><path d="M10 14h14M10 20h14"/></svg>',
+ cable:'<svg class="glyph" viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17h9"/><rect x="12" y="11" width="10" height="12" rx="2"/><path d="M22 14h5v6h-5"/></svg>',
+ wall:'<svg class="glyph" viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="7" width="20" height="20" rx="2"/><circle cx="17" cy="17" r="6"/><circle cx="10.5" cy="10.5" r="1" fill="currentColor"/><circle cx="23.5" cy="10.5" r="1" fill="currentColor"/><circle cx="10.5" cy="23.5" r="1" fill="currentColor"/><circle cx="23.5" cy="23.5" r="1" fill="currentColor"/></svg>',
+ jam:'<svg class="glyph" viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 5l10.4 6v12L17 29 6.6 23V11z"/><circle cx="17" cy="17" r="6"/></svg>',
+ panel:'<svg class="glyph" viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 4v26"/><path d="M14 13h12v8H14"/><path d="M4 15h10v4H4"/></svg>',
+ bulkhead:'<svg class="glyph" viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4v26"/><path d="M4 14h22v6H4"/><path d="M19 11h3v12h-3"/></svg>',
+ pcb:'<svg class="glyph" viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="22" width="26" height="6" rx="1"/><rect x="10" y="8" width="14" height="14" rx="2"/><path d="M13 22v4M17 22v4M21 22v4"/></svg>',
+ male:'<svg class="glyph" viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="2"><circle cx="17" cy="17" r="12"/><path d="M11 17h12" stroke-width="3"/></svg>',
+ female:'<svg class="glyph" viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="2"><circle cx="17" cy="17" r="12"/><circle cx="17" cy="17" r="4"/></svg>',
+ straight:'<svg class="glyph" viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17h26"/><rect x="18" y="12" width="10" height="10" rx="1"/></svg>',
+ ra:'<svg class="glyph" viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 26h10V8"/><rect x="9" y="4" width="10" height="9" rx="1"/></svg>',
+ with:'<svg class="glyph" viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 17l6 6 12-12"/></svg>',
+ without:'<svg class="glyph" viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 10l14 14M24 10L10 24"/></svg>'
+};
+const FAMROWS_CACHE = {};
+function rowsForQ(a) { const k = a.fam + '|' + (a.finish || ''); return FAMROWS_CACHE[k] || (FAMROWS_CACHE[k] = famRows(a.fam, a)); }
+function wSteps(a = W.a) {
+  const st = ['fam']; const F = FAM[a.fam]; if (!F) return st;
+  const rows = rowsForQ(a);
+  if (F.sizes && rows.some(r => r.search && r.search.contacts && Object.keys(r.search.contacts).length)) st.push('wires');
+  if (F.coax) st.push('coax');
+  st.push('mount', 'gender');
+  const atMount = rows.filter(r => r.search && (r.search.mount || []).includes(a.mount));
+  if (a.mount && atMount.some(r => (r.search.angles || []).includes('90'))) st.push('angle');
+  if (F.generator === 'd38999') st.push('finish');
+  if (a.mount && atMount.some(r => r.search.withPins) && atMount.some(r => !r.search.withPins)) st.push('pins');
+  return st;
+}
+function wDef(k, a = W.a) {
+  const F = FAM[a.fam] || {};
+  switch (k) {
+   case 'fam': return {q: 'Which connector family?', o: CAT.families.map(f => [f.id, f.name, f.sub, f.icon, f.meta])};
+   case 'coax': return {q: 'Which coax cable?', small: 1, o: CAT.coaxCables.map(([c, g, z]) => [c, c, g + (z ? ` · ${z} Ω` : '')]).concat([['none', 'No cable', 'Receptacle wired inside a box']])};
+   case 'mount': return {q: 'Where does it mount?', o: F.mounts};
+   case 'gender': return {q: F.coax ? 'Plug or jack?' : 'Male or female?', o: F.genders};
+   case 'angle': return {q: 'Which cable exit?', o: [['straight', 'Straight', 'In line with the connector', 'straight', ''], ['90', '90°', 'Right angle', 'ra', F.angleMeta || '']]};
+   case 'finish': return {q: 'Which finish / colour?', o: Object.entries(D.finishes).map(([k2, f]) => [k2, f.name, `Finish letter ${k2} · backshell ${f.backshell}`, 'sw:' + f.sw, ''])};
+   case 'pins': return {q: 'Should it come with pins?', o: [['with', 'With pins', 'Contacts in the box', 'with', (F.pinsMeta || [])[0] || ''], ['without', 'Without pins', 'Order contacts separately', 'without', (F.pinsMeta || [])[1] || '']]};
+  }
+}
+const LABEL = {fam: 'Type', wires: 'Wires', coax: 'Cable', mount: 'Mount', gender: 'Gender', angle: 'Exit', finish: 'Finish', pins: 'Pins'};
+
+/* ===================== STEP-BY-STEP WIZARD ===================== */
+const W = {i: 0, a: {}, wires: [{n: 5, awg: 20}, {n: 10, awg: 16}], done: false};
+function ansText(k) {
+  if (k === 'wires') return W.wires.filter(w => w.n > 0).map(w => `${w.n}×${w.awg}`).join(' + ');
+  const d = wDef(k, W.a); const o = d && d.o.find(x => x[0] === W.a[k]); return o ? o[1] : '';
+}
+function renderWiz() {
+  const st = wSteps(); const box = $('#wiz');
+  if (W.done) {
+    box.innerHTML = `<div class="rbar"><div><h2>Results</h2><div class="sub">${state.results.filter(r => r.exact).length ? 'Exact matches first' : 'No exact match – the closest parts are shown with what differs'}</div></div>
+      <div style="display:flex;gap:8px"><button class="btn small" id="wback">← Back</button><button class="btn small" id="wreset">Start over</button></div></div>
+      <div class="answers">${st.map((k, i) => `<button class="ans" data-go="${i}"><span>${LABEL[k]}</span>${esc(ansText(k))}</button>`).join('')}</div>`;
+    $('#main').hidden = false; return;
+  }
+  $('#main').hidden = true;
+  const k = st[W.i]; const n = st.length; const pct = Math.round(W.i / n * 100);
+  let html = `<div class="wtop"><span>Step ${W.i + 1} of ${n}</span><b>${pct}%</b></div><div class="bar"><i style="width:${Math.max(pct, 4)}%"></i></div>`;
+  const prev = st.slice(0, W.i).filter(x => x === 'wires' || W.a[x] !== undefined);
+  if (prev.length) html += `<div class="answers">${prev.map(x => `<button class="ans" data-go="${st.indexOf(x)}"><span>${LABEL[x]}</span>${esc(ansText(x))}</button>`).join('')}</div>`;
+  if (W.i > 0) html += `<button class="back" id="wback">← Back</button>`;
+  if (k === 'wires') {
+    html += `<div class="qhead"><div class="qn">Question ${W.i + 1}/${n}</div><div class="qp">Pick each wire gauge, then enter how many wires of it go into the connector.</div></div>
+    <div class="wires">${W.wires.map((w, i) => `<div class="wrow"><select id="wa${i}" aria-label="Gauge, group ${i + 1}" data-wi="${i}" data-f="awg">${AWGS.map(g => `<option value="${g}" ${g === w.awg ? 'selected' : ''}>${g} AWG</option>`).join('')}</select><span class="x">×</span>
+      <input id="wn${i}" type="number" min="0" max="200" value="${w.n}" aria-label="How many ${w.awg} AWG wires" data-wi="${i}" data-f="n">
+      <button type="button" class="del" data-del="${i}" aria-label="Remove group ${i + 1}" ${W.wires.length < 2 ? 'disabled' : ''}>✕</button></div>`).join('')}
+      <div class="wfoot"><button type="button" class="btn small" id="wadd">+ Add gauge</button><span class="wsum" id="wsum"></span><button type="button" class="btn primary" id="wnext">Next →</button></div></div>`;
+  } else {
+    const d = wDef(k);
+    html += `<div class="qhead"><div class="qn">Question ${W.i + 1}/${n}</div><div class="qp">${d.q}</div></div>
+    <div class="cards${d.small ? ' small' : ''}">${d.o.map(([v, t, sub, ic, meta]) => `<button type="button" class="card" data-v="${v}" aria-pressed="${W.a[k] === v}">
+      ${ic ? (ic.startsWith('sw:') ? `<span class="swatch" style="background:${ic.slice(3)}"></span>` : ICON[ic] || '') : ''}<span class="ct">${esc(t)}</span>${sub ? `<span class="cs">${esc(sub)}</span>` : ''}${meta ? `<span class="cm">${esc(meta)}</span>` : ''}</button>`).join('')}</div>`;
+  }
+  box.innerHTML = html; updWsum();
+}
+function updWsum() { const e = $('#wsum'); if (!e) return; const t = W.wires.reduce((x, w) => x + (+w.n || 0), 0); e.textContent = `${t} wire${t === 1 ? '' : 's'}`; }
+function showNeed(res) {
+  const exact = res.list.filter(c => c.exact);
+  state.results = exact.length ? exact.slice(0, 8) : res.list.slice(0, 6); state.resultsMode = 'need';
+  state.current = state.results[0] ? state.results[0].rec : null;
+  renderResults(); renderSheet(state.current, state.results[0] ? {mode: 'need', c: state.results[0]} : null);
+}
+function wFinish() {
+  W.done = true;
+  const st = wSteps();
+  const o = {...W.a, wires: st.includes('wires') ? W.wires.filter(w => w.n > 0).map(w => ({n: +w.n, awg: +w.awg})) : []};
+  if (!st.includes('angle')) o.angle = 'straight';
+  const res = needSearch(o);
+  renderWiz(); showNeed(res);
+}
+function wNext() { const st = wSteps(); if (W.i + 1 >= st.length) wFinish(); else { W.i++; renderWiz(); } }
+$('#wiz').addEventListener('click', e => {
+  const c = e.target.closest('.card');
+  if (c) { const k = wSteps()[W.i]; const old = W.a[k]; W.a[k] = c.dataset.v;
+    if (k === 'fam' && old !== c.dataset.v) { W.a = {fam: c.dataset.v}; if (FAM[c.dataset.v].generator === 'd38999') W.a.finish = Object.keys(D.finishes)[0]; }
+    if (k === 'mount' && old !== c.dataset.v) { delete W.a.angle; delete W.a.pins; }
+    wNext(); return; }
+  const g = e.target.closest('[data-go]'); if (g) { W.done = false; W.i = +g.dataset.go; renderWiz(); return; }
+  if (e.target.closest('#wback')) { if (W.done) { W.done = false; W.i = wSteps().length - 1; } else W.i = Math.max(0, W.i - 1); renderWiz(); return; }
+  if (e.target.closest('#wreset')) { W.i = 0; W.a = {}; W.done = false; renderWiz(); return; }
+  if (e.target.closest('#wadd')) { W.wires.push({n: 1, awg: 22}); renderWiz(); return; }
+  const del = e.target.closest('[data-del]'); if (del) { W.wires.splice(+del.dataset.del, 1); renderWiz(); return; }
+  if (e.target.closest('#wnext')) { if (!W.wires.some(w => +w.n > 0)) { toast('Enter at least one wire.'); return; } wNext(); }
+});
+const wInput = e => { const t = e.target; if (t.dataset.wi === undefined) return; W.wires[+t.dataset.wi][t.dataset.f] = +t.value; updWsum(); };
+$('#wiz').addEventListener('input', wInput); $('#wiz').addEventListener('change', wInput);
+
+/* ===================== RENDER ===================== */
+let state = {tab: 'pn', current: null, results: [], resultsMode: 'pn'};
+function renderResults() {
+  const R = $('#results');
+  if (!state.results.length) { R.innerHTML = `<div class="empty">${state.resultsMode === 'pn' ? 'No part number in the library starts with or contains that text. Try the series prefix, e.g. <span class="mono">D38999/26</span>, <span class="mono">M24308/2</span> or <span class="mono">M39012/26</span>.' : 'Nothing to show yet.'}</div>`; return; }
+  const exactN = state.results.filter(r => r.exact).length;
+  const head = state.resultsMode === 'pn' ? `<div class="rhead"><span>${state.results.length} part number${state.results.length > 1 ? 's' : ''}</span></div>`
+    : `<div class="rhead"><span>${exactN ? exactN + ' exact match' + (exactN > 1 ? 'es' : '') : 'No exact match – closest parts'}</span><span>${state.results.length} shown</span></div>`;
+  R.innerHTML = head + state.results.map((r, i) => {
+    const cls = state.resultsMode === 'need' ? (r.exact ? 'exact' : 'closest') : '';
+    const tags = [];
+    if (state.resultsMode === 'need') {
+      if (r.exact) tags.push('<span class="tag ok">match</span>');
+      if (r.fit && r.fit.unN) tags.push(`<span class="tag bad">${r.fit.unN} wire${r.fit.unN > 1 ? 's' : ''} don’t fit</span>`);
+      if (r.fit && !r.fit.unN && r.total) tags.push(`<span class="tag">${r.fit.spare} spare</span>`);
+      r.diffs.slice(0, 2).forEach(d => tags.push(`<span class="tag warn">${esc(d)}</span>`));
+    } else tags.push(`<span class="tag">${famName(r.rec.family)}</span>`);
+    return `<button class="ritem ${cls}" data-i="${i}" aria-current="${state.current && state.current.pn === r.rec.pn ? 'true' : 'false'}">
+      <span class="pn">${esc(r.rec.pn)}</span><span class="d">${esc(r.rec.short || r.rec.desc)}</span><span class="tags">${tags.join('')}</span></button>`;
+  }).join('');
+}
+function picBlock(file, label, cap) {
+  if (!file) return `<div class="pic"><div class="frame" style="color:#555;font-family:var(--f-mono)">No picture in library</div><div class="cap"><b>${label}</b><span>${esc(cap || '')}</span></div></div>`;
+  return `<div class="pic"><div class="frame"><img src="${imgSrc(file)}" alt="${esc(label + ': ' + cap)}" draggable="true"></div>
+    <div class="cap"><span><b>${label}</b> · ${esc(cap)}</span><button class="btn small" data-save="${file}">Save PNG for Visio</button></div></div>`;
+}
+const row = (k, v) => `<div class="row"><div class="k">${k}</div><div class="v">${v}</div></div>`;
+const linkify = s => { const p = String(s).split(' ')[0]; return lookup(p) ? plink(p) + (String(s).length > p.length ? ' ' + esc(String(s).slice(p.length + 1)) : '') : esc(s); };
+function renderSheet(r, ctx) {
+  const S = $('#sheet');
+  if (!r) { S.innerHTML = `<div class="shead"><div class="desc">Pick a part on the left to see its sheet.</div></div>`; return; }
+  const links = `<div class="links">${fullLinks(r).map(([t, u]) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)} ↗</a>`).join('')}</div>`;
+  if (r.family === 'acc') {
+    S.innerHTML = `<div class="shead"><div class="mpn">${esc(r.pn)}<span class="tag">${esc(r.accType)}</span></div><div class="desc">${esc(r.desc)}</div></div>
+     <div class="specs">${row('Fits', esc(r.fits))}${r.mate ? row('Mating contact', plink(r.mate)) : ''}</div>
+     ${r.verify && r.verify.length ? `<div class="notes"><h3>Verify</h3><ul>${r.verify.map(v => `<li>${esc(v)}</li>`).join('')}</ul></div>` : ''}
+     ${liveBlock(r.pn)}${links}`; return;
+  }
+  let match = '';
+  if (ctx && ctx.mode === 'need') {
+    const c = ctx.c;
+    if (c.exact) match = `<div class="match ok">Matches every requirement.</div>`;
+    else { const why = [...(c.fit && c.fit.unN ? c.fit.un.map(u => `${u.n} × ${u.awg} AWG have no suitable contact`) : []), ...c.diffs];
+      match = `<div class="match warn">Closest available. Differs in: ${esc(why.join('; '))}.${heavyHint(c)}</div>`; }
+  }
+  let fit = '';
+  if (ctx && ctx.mode === 'need' && ctx.c.fit && ctx.c.total) {
+    const f = ctx.c.fit; const F = FAM[r.family];
+    const lines = Object.entries(f.use).map(([s, a]) => a.map(x => `${x.n} × ${x.awg} AWG → ${(F.sizes[s] || {}).label || s} contacts`).join('\n')).join('\n');
+    fit = row('Wire fit', `<div class="fitbox">${esc(lines || '—')}${f.un.map(u => `\n${u.n} × ${u.awg} AWG → no contact`).join('')}\nSpare cavities: ${f.spare}</div>`.replace(/\n/g, '<br>'));
+  }
+  let backshell = r.backshell || [];
+  if (ctx && ctx.c && ctx.c.angleNote && backshell.length > 1) backshell = [backshell[1], backshell[0]];
+  const bs = backshell.map(linkify).join('<br>');
+  const mates = (r.mates || []).length ? r.mates.map(plink).join('<br>') : '<span class="na">—</span>';
+  const pins = (r.pins || []).map(p => (lookup(p.pn) ? plink(p.pn) : esc(p.pn)) + (p.note ? ` <span class="na">· ${esc(p.note)}</span>` : '')).join('<br>');
+  const sw = r.color && r.color.sw ? `<span class="sw" style="background:${esc(r.color.sw)}"></span>` : '';
+  const ang = ctx && ctx.c && ctx.c.angleNote ? esc(ctx.c.angleNote) : esc(r.angle);
+  S.innerHTML = `<div class="shead"><div class="mpn">${esc(r.pn)}<span class="tag">${esc(famName(r.family))}</span></div>
+    <div class="desc">${esc(r.desc)}</div>${r.aliasFrom ? `<div class="match ok">You searched ${esc(r.aliasFrom)} – shown as ${esc(r.pn)}.</div>` : ''}${match}</div>
+    <div class="pics">${picBlock(r.side, 'Side view', r.sideCap)}${picBlock(r.front, 'Front view', r.frontCap)}</div>
+    <div class="specs">
+      ${row('MPN', `<span class="mono">${esc(r.pn)}</span>`)}
+      ${row('Backshell MPN', bs || '<span class="na">—</span>')}
+      ${row('Mating connector', mates + (r.alt ? `<br><span class="na">Jam-nut alternative: </span>${plink(r.alt)}` : ''))}
+      ${row('Colour / finish', sw + esc(r.color ? r.color.name : '—'))}
+      ${row('Shell size', esc(r.shell || '—'))}
+      ${row('Pins / contacts MPN', pins || '<span class="na">—</span>')}
+      ${row('Comes with pins', r.withPins ? `<span class="${r.withPins.v ? 'yes' : 'no'}">${esc(r.withPins.t)}</span>` : '—')}
+      ${row('Angle', ang || '—')}
+      ${row('For PCB', r.pcb ? '<span class="yes">Yes – PCB tails</span>' : '<span class="na">No</span>')}
+      ${row('Mounting', esc(r.mountText || '—'))}
+      ${r.cables && r.cables.length ? row('Cables', esc(r.cables.join(', '))) : ''}
+      ${fit}
+    </div>
+    ${(r.notes && r.notes.length) || (r.verify && r.verify.length) ? `<div class="notes">${r.notes && r.notes.length ? `<h3>Notes</h3><ul>${r.notes.map(n => `<li>${esc(n)}</li>`).join('')}</ul>` : ''}${r.verify && r.verify.length ? `<h3>Verify before ordering</h3><ul>${r.verify.map(n => `<li>${esc(n)}</li>`).join('')}</ul>` : ''}</div>` : ''}
+    ${liveBlock(r.pn)}${links}`;
+}
+function liveBlock(pn) {
+  const L = LIVE[pn];
+  if (!L || (!L.dk && !L.ms)) return `<div class="live"><h3>Distributor data <span>${LIVE_AS_OF ? `No DigiKey / Mouser listing yet (last refresh ${esc(LIVE_AS_OF)})` : 'Not refreshed yet – runs weekly'}</span></h3></div>`;
+  const card = (name, d) => {
+    if (!d) return `<div class="dcard"><div class="dh"><span class="dn">${name}</span><span class="stock na">no data yet</span></div></div>`;
+    const st = d.stock > 0 ? `<span class="stock ok">${Number(d.stock).toLocaleString()} in stock</span>` : `<span class="stock no">0 in stock</span>`;
+    const pb = (d.price || []).slice(0, 5).map(([q, p]) => `<tr><td>${Number(q).toLocaleString()}+</td><td>$${Number(p).toFixed(2)}</td></tr>`).join('');
+    const params = (d.params || []).length ? `<details class="params"><summary>${d.params.length} parameters</summary><table>${d.params.map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join('')}</table></details>` : '';
+    return `<div class="dcard"><div class="dh"><span class="dn">${name}</span>${st}</div>
+      ${d.photo ? `<div><img class="dphoto" src="${esc(d.photo)}" alt="" onerror="this.remove()"></div>` : ''}
+      <div class="dmeta">${d.mpn ? `<span>${esc(d.mfr || '')} ${esc(d.mpn)}${d.sku ? ` · ${esc(d.sku)}` : ''}</span>` : ''}${d.desc ? `<span>${esc(d.desc)}</span>` : ''}
+        ${d.status ? `<span>Status: ${esc(d.status)}</span>` : ''}${d.lead ? `<span>Lead time: ${esc(d.lead)}</span>` : ''}</div>
+      ${pb ? `<table class="pb">${pb}</table>` : ''}
+      <div class="dlinks">${d.url ? `<a href="${esc(d.url)}" target="_blank" rel="noopener">Product page ↗</a>` : ''}${d.datasheet ? `<a href="${esc(d.datasheet)}" target="_blank" rel="noopener">Datasheet ↗</a>` : ''}</div>${params}</div>`;
+  };
+  return `<div class="live"><h3>Distributor data <span>Refreshed ${esc(LIVE_AS_OF)} · prices in USD, qty 1+</span></h3><div class="dist">${card('DigiKey', L.dk)}${card('Mouser', L.ms)}</div></div>`;
+}
+function heavyHint(c) {
+  if (!c.fit || !c.fit.un.length) return '';
+  return c.fit.un.some(u => u.awg < 12) ? ' Wires heavier than 12 AWG need size 8/10 power contacts – not in this library.' : '';
+}
+
+/* ===================== ACTIONS ===================== */
+function showPN(q) {
+  const rec = lookup(q);
+  let list = []; const seenPn = new Set(); for (const pn of suggest(q)) { const r = lookup(pn); if (r && !seenPn.has(r.pn)) { seenPn.add(r.pn); list.push({rec: r}); } }
+  if (rec && !list.some(x => x.rec.pn === rec.pn)) list.unshift({rec});
+  state.results = list; state.resultsMode = 'pn';
+  state.current = rec || (state.results[0] && state.results[0].rec) || null;
+  renderResults(); renderSheet(state.current, null);
+}
+function setTabSilently(t) { state.tab = t; for (const x of ['pn', 'need', 'quick']) { $('#tab-' + x).setAttribute('aria-selected', t === x); $('#pane-' + x).hidden = t !== x; } }
+function setTab(t) {
+  setTabSilently(t);
+  try { localStorage.setItem('ca-tab', t); } catch (e) {}
+  if (t === 'need') { if (W.done) wFinish(); else renderWiz(); }
+  else if (t === 'quick') { $('#main').hidden = false; renderQuick(); }
+  else { $('#main').hidden = false; showPN($('#pnq').value || (CAT.examples[0] || '')); }
+}
+function toast(m) { const t = $('#toast'); t.textContent = m; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => t.hidden = true, 2600); }
+async function savePng(file) {
+  const name = (state.current ? state.current.pn.replace(/[\/\s]/g, '_') + '_' : '') + file;
+  const src = imgSrc(file);
+  if (window.claude && window.claude.use) {
+    try { const dl = await window.claude.use('downloads');
+      if (dl) { const blob = await (await fetch(src)).blob(); await dl.save({filename: name, data: blob}); toast('Saved ' + name); return; }
+    } catch (e) { if (e && e.code === 'declined') return; }
+  }
+  const a = document.createElement('a'); a.href = src; a.download = name;
+  if (!src.startsWith('data:')) a.target = '_blank';
+  document.body.appendChild(a); a.click(); a.remove();
+  toast(src.startsWith('data:') ? 'Saved ' + name : 'Picture opened – right-click › Save image as, or drag it into Visio');
+}
+
+/* ===================== ONE-PAGE NEED SEARCH ===================== */
+const Q = {a: {fam: CAT.families[0] ? CAT.families[0].id : '', mount: '', gender: '', angle: 'straight', finish: D ? Object.keys(D.finishes)[0] : '', pins: 'with', coax: 'RG-58'}, wires: [{awg: 20, n: 5}, {awg: 16, n: 10}]};
+const QLABEL = {fam: 'Connector type', coax: 'Coax cable', mount: 'Mounting', gender: 'Gender', angle: 'Cable exit', finish: 'Finish / colour', pins: 'Pins'};
+function qFix() {
+  for (let pass = 0; pass < 2; pass++) for (const k of wSteps(Q.a)) { if (k === 'wires') continue; const d = wDef(k, Q.a); if (!d.o.some(o => o[0] === Q.a[k])) Q.a[k] = d.o[0][0]; }
+}
+function renderQuick() {
+  qFix(); const st = wSteps(Q.a); const f = $('#quick-form'); let h = '';
+  for (const k of st) {
+    if (k === 'wires') {
+      h += `<div class="q wide"><span class="ql">Wires – pick a gauge, then how many</span><div class="qwires">${Q.wires.map((w, i) => `<div class="wrow">
+        <select id="qa${i}" data-qi="${i}" data-f="awg" aria-label="Gauge, group ${i + 1}">${AWGS.map(g => `<option value="${g}" ${g === w.awg ? 'selected' : ''}>${g} AWG</option>`).join('')}</select><span class="x">×</span>
+        <input id="qn${i}" type="number" min="0" max="200" value="${w.n}" data-qi="${i}" data-f="n" aria-label="How many ${w.awg} AWG wires">
+        <button type="button" class="del" data-qdel="${i}" aria-label="Remove group ${i + 1}" ${Q.wires.length < 2 ? 'disabled' : ''}>✕</button></div>`).join('')}
+        <div class="chips"><button type="button" class="btn small" id="qadd">+ Add gauge</button><span class="parsed" id="qsum"></span></div></div></div>`;
+      continue;
+    }
+    const d = wDef(k, Q.a);
+    if (k === 'coax' || k === 'finish') {
+      h += `<div class="q"><label for="q-${k}">${QLABEL[k]}</label><select id="q-${k}" data-qk="${k}">${d.o.map(o => `<option value="${o[0]}" ${Q.a[k] === o[0] ? 'selected' : ''}>${k === 'finish' ? o[0] + ' – ' : ''}${esc(o[1])}${k === 'coax' && o[2] ? ' – ' + esc(o[2]) : ''}</option>`).join('')}</select></div>`; continue;
+    }
+    h += `<div class="q${k === 'fam' || k === 'mount' ? ' wide' : ''}"><span class="ql">${QLABEL[k]}</span><div class="seg" data-qseg="${k}">${d.o.map(o => `<button type="button" data-v="${o[0]}" aria-pressed="${Q.a[k] === o[0]}">${esc(o[1])}${o[4] && k === 'mount' ? `<br><span style="font-family:var(--f-mono);font-size:11px;opacity:.75">${esc(o[4])}</span>` : ''}</button>`).join('')}</div></div>`;
+  }
+  f.innerHTML = h; qSum(); runQuick();
+}
+function qSum() { const e = $('#qsum'); if (!e) return; const t = Q.wires.reduce((x, w) => x + (+w.n || 0), 0); e.textContent = `Total: ${t} wire${t === 1 ? '' : 's'}`; }
+function runQuick() {
+  const st = wSteps(Q.a);
+  const o = {...Q.a, wires: st.includes('wires') ? Q.wires.filter(w => +w.n > 0).map(w => ({n: +w.n, awg: +w.awg})) : []};
+  if (!st.includes('angle')) o.angle = 'straight'; if (!st.includes('pins')) delete o.pins;
+  showNeed(needSearch(o));
+}
+let qT; const qRun = () => { clearTimeout(qT); qT = setTimeout(runQuick, 150); };
+$('#quick-form').addEventListener('submit', e => e.preventDefault());
+$('#quick-form').addEventListener('click', e => {
+  const b = e.target.closest('[data-qseg] button');
+  if (b) { const k = b.closest('[data-qseg]').dataset.qseg; Q.a[k] = b.dataset.v; if (k === 'fam' || k === 'mount') { Q.a.angle = 'straight'; Q.a.pins = 'with'; } renderQuick(); return; }
+  if (e.target.closest('#qadd')) { Q.wires.push({awg: 22, n: 1}); renderQuick(); return; }
+  const d = e.target.closest('[data-qdel]'); if (d) { Q.wires.splice(+d.dataset.qdel, 1); renderQuick(); }
+});
+$('#quick-form').addEventListener('change', e => { const t = e.target;
+  if (t.dataset.qk) { Q.a[t.dataset.qk] = t.value; renderQuick(); return; }
+  if (t.dataset.qi !== undefined) { Q.wires[+t.dataset.qi][t.dataset.f] = +t.value; qSum(); runQuick(); } });
+$('#quick-form').addEventListener('input', e => { const t = e.target; if (t.dataset.qi !== undefined && t.dataset.f === 'n') { Q.wires[+t.dataset.qi].n = +t.value; qSum(); qRun(); } });
+
+/* ===================== WIRING ===================== */
+document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => setTab(b.id.slice(4))));
+$('#pnform').addEventListener('submit', e => { e.preventDefault(); showPN($('#pnq').value); });
+$('#pnq').addEventListener('input', () => { const v = $('#pnq').value; if (norm(v).length >= 3) showPN(v); });
+$('#results').addEventListener('click', e => { const b = e.target.closest('.ritem'); if (!b) return; const r = state.results[+b.dataset.i]; state.current = r.rec; renderResults();
+  renderSheet(r.rec, state.resultsMode === 'need' ? {mode: 'need', c: r} : null);
+  if (window.matchMedia('(max-width:860px)').matches) $('#sheet').scrollIntoView({behavior: 'smooth', block: 'start'}); });
+$('#sheet').addEventListener('click', e => {
+  const a = e.target.closest('.pnlink'); if (a) { const pn = a.dataset.pn; setTabSilently('pn'); $('#main').hidden = false; $('#pnq').value = pn; showPN(pn); return; }
+  const s = e.target.closest('[data-save]'); if (s) savePng(s.dataset.save); });
+$('#quick').innerHTML = '<span class="lbl">Try</span>' + CAT.examples.map(q => `<button class="chip" type="button" data-q="${esc(q)}">${esc(q)}</button>`).join('');
+$('#quick').addEventListener('click', e => { const b = e.target.closest('[data-q]'); if (!b) return; $('#pnq').value = b.dataset.q; showPN(b.dataset.q); });
+$('#fams').innerHTML = CAT.families.map(f => `<span class="fam">${esc(f.name)}${f.meta ? ' · ' + esc(f.meta) : ''}</span>`).join('');
+if (!window.CATALOG) $('#results').innerHTML = '<div class="empty">catalog.js was not found next to this page. Keep the HTML in the ConnectorSelector folder together with catalog.js and the img folder.</div>';
+let startTab = 'pn'; try { startTab = localStorage.getItem('ca-tab') || 'pn'; } catch (e) {}
+$('#pnq').value = CAT.examples[0] || '';
+setTab(['pn', 'need', 'quick'].includes(startTab) ? startTab : 'pn');
+
+</script>
+</body>
+</html>
