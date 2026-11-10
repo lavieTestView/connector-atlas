@@ -167,6 +167,9 @@ details.params summary{cursor:pointer;font-size:12px;color:var(--muted)}
 details.params table{font-size:12px;width:100%;border-collapse:collapse;margin-top:6px}
 details.params td{padding:2px 6px 2px 0;vertical-align:top;border-bottom:1px solid var(--line)}
 details.params td:first-child{color:var(--dim);width:45%}
+.cpy{display:inline-flex;align-items:center;justify-content:center;width:24px;height:22px;margin-inline-start:6px;vertical-align:-5px;background:var(--panel2);border:1px solid var(--line2);border-radius:4px;color:var(--muted);cursor:pointer;padding:0}
+.cpy:hover{color:var(--accent);border-color:var(--accent)}
+.cpy.done{color:var(--ok);border-color:var(--ok)}
 footer{color:var(--dim);font-size:12px;border-top:1px solid var(--line);padding-top:12px;max-width:110ch}
 @media (prefers-reduced-motion:no-preference){.ritem,.chip,.links a{transition:border-color .12s,color .12s}}
 </style>
@@ -235,7 +238,8 @@ const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;
 const norm = s => String(s || '').toUpperCase().replace(/\s+/g, '');
 const dk = pn => 'https://www.digikey.com/en/products/result?keywords=' + encodeURIComponent(pn);
 const ms = pn => 'https://www.mouser.com/c/?q=' + encodeURIComponent(pn);
-const plink = pn => `<a class="pnlink" data-pn="${esc(pn)}">${esc(pn)}</a>`;
+const cpyBtn = pn => `<button type="button" class="cpy" data-copy="${esc(pn)}" title="Copy ${esc(pn)}" aria-label="Copy ${esc(pn)}"><svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2h-6A1.5 1.5 0 0 0 2 3.5v6A1.5 1.5 0 0 0 3.5 11H5"/></svg></button>`;
+const plink = pn => `<a class="pnlink" data-pn="${esc(pn)}">${esc(pn)}</a>${cpyBtn(pn)}`;
 const FAM = Object.fromEntries(CAT.families.map(f => [f.id, f]));
 const famName = f => f === 'acc' ? 'Accessory' : (FAM[f] ? FAM[f].name : f);
 const AWGS = [8,10,12,14,16,18,20,22,24,26,28];
@@ -571,7 +575,7 @@ function renderSheet(r, ctx) {
     <div class="desc">${esc(r.desc)}</div>${r.aliasFrom ? `<div class="match ok">You searched ${esc(r.aliasFrom)} – shown as ${esc(r.pn)}.</div>` : ''}${match}</div>
     <div class="pics">${picBlock(r.side, 'Side view', r.sideCap)}${picBlock(r.front, 'Front view', r.frontCap)}</div>
     <div class="specs">
-      ${row('MPN', `<span class="mono">${esc(r.pn)}</span>`)}
+      ${row('MPN', `<span class="mono">${esc(r.pn)}</span>${cpyBtn(r.pn)}`)}
       ${row('Backshell MPN', bs || '<span class="na">—</span>')}
       ${row('Mating connector', mates + (r.alt ? `<br><span class="na">Jam-nut alternative: </span>${plink(r.alt)}` : ''))}
       ${row('Colour / finish', sw + esc(r.color ? r.color.name : '—'))}
@@ -693,7 +697,15 @@ $('#pnq').addEventListener('input', () => { const v = $('#pnq').value; if (norm(
 $('#results').addEventListener('click', e => { const b = e.target.closest('.ritem'); if (!b) return; const r = state.results[+b.dataset.i]; state.current = r.rec; renderResults();
   renderSheet(r.rec, state.resultsMode === 'need' ? {mode: 'need', c: r} : null);
   if (window.matchMedia('(max-width:860px)').matches) $('#sheet').scrollIntoView({behavior: 'smooth', block: 'start'}); });
-$('#sheet').addEventListener('click', e => {
+async function copyText(t) {
+  try { await navigator.clipboard.writeText(t); return true; } catch (e) {}
+  try { const ta = document.createElement('textarea'); ta.value = t; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select(); const ok = document.execCommand('copy'); ta.remove(); return ok; } catch (e) { return false; }
+}
+$('#sheet').addEventListener('click', async e => {
+  const cb = e.target.closest('[data-copy]');
+  if (cb) { const ok = await copyText(cb.dataset.copy); cb.classList.toggle('done', ok); setTimeout(() => cb.classList.remove('done'), 1200);
+            toast(ok ? 'Copied ' + cb.dataset.copy : 'Could not copy – select the text and press Ctrl+C'); return; }
   const a = e.target.closest('.pnlink'); if (a) { const pn = a.dataset.pn; setTabSilently('pn'); $('#main').hidden = false; $('#pnq').value = pn; showPN(pn); return; }
   const s = e.target.closest('[data-save]'); if (s) savePng(s.dataset.save); });
 $('#quick').innerHTML = '<span class="lbl">Try</span>' + CAT.examples.map(q => `<button class="chip" type="button" data-q="${esc(q)}">${esc(q)}</button>`).join('');
